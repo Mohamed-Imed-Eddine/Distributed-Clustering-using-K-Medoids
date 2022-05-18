@@ -77,35 +77,80 @@ public class KMedoid {
             //System.out.println("medoids"+medoids);
             //System.out.println("cost1:"+String.format("%.2f", cost));
             //System.out.println("cost2:"+String.format("%.2f", cost(data,medoids,labels)));
+            
+            // System.out.println(cost==cost(data,medoids,labels));
+
+
+            
             // Choisir aléatoirement un objet non représentatif (Or).
             index_or = medoids.get(0);
             while(medoids.contains(index_or)){
                 index_or = (int) (Math.random()*m);
             }
-            index_oj = medoids.get(labels[index_or]);
+
+            //index_oj = medoids.get(labels[index_or]);
+
             //System.out.println("or:"+index_or+" oj:"+index_oj);
-            ArrayList<Integer> new_medoids = new ArrayList<>(medoids);
-            new_medoids.set(labels[index_or], index_or);
-            //System.out.println("new"+new_medoids);
-            //  Calculer le coût total "S" des échanges d'objets représentatifs (oj) avec (Or)
-            new_cost = cost(data, new_medoids, labels);
-            //System.out.println("new cost"+String.format("%.2f", new_cost));
-            if(new_cost<cost){
+            
+            Double best_partial_cost;
+            ArrayList<Integer> best_partial_medoids = new ArrayList<>();
+            ArrayList<Integer> new_medoids;
+            
+            int best_oj = 0;
+            best_partial_cost = Double.POSITIVE_INFINITY;
+            // Essayer d'efectuer des echanges avec des objets representatif
+            for(int i=0;i<k;i++){
+                new_medoids = new ArrayList<>(medoids);
+                new_medoids.set(i, index_or);
+                new_cost = cost(data, new_medoids, labels);
+
+                if(new_cost<best_partial_cost){
+                    //cpt = 0;
+                    best_partial_cost = new_cost;
+                    best_partial_medoids = new ArrayList<>(new_medoids);
+                    
+                }
+
+            }
+
+            if(best_partial_cost<cost){
                 cpt = 0;
-                if((new_cost>=(cost-stagnation_step))){
+                if((best_partial_cost>=(cost-stagnation_step))){
                     stop = true;
                 }
                 
                 //System.out.println("UPDATE : cost: "+String.format("%.2f",cost)+"\tnew cost: "+String.format("%.2f",new_cost));
-                medoids = new ArrayList<>(new_medoids);
-                cost = new_cost;
+                medoids = new ArrayList<>(best_partial_medoids);
+                cost = best_partial_cost;
             }
             else{
                 cpt++;
                 if(cpt>max_stagnation_iterations){
                     stop = true;
                 }
-            }                   
+            } 
+            
+            //new_medoids.set(labels[index_or], index_or);
+            //System.out.println("new"+new_medoids);
+            //  Calculer le coût total "S" des échanges d'objets représentatifs (oj) avec (Or)
+            //new_cost = cost(data, new_medoids, labels);
+            //System.out.println("new cost"+String.format("%.2f", new_cost));
+            // if(new_cost<cost){
+            //     cpt = 0;
+            //     if((new_cost>=(cost-stagnation_step))){
+            //         stop = true;
+            //     }
+                
+            //     //System.out.println("UPDATE : cost: "+String.format("%.2f",cost)+"\tnew cost: "+String.format("%.2f",new_cost));
+            //     medoids = new ArrayList<>(new_medoids);
+            //     cost = new_cost;
+            // }
+            // else{
+            //     cpt++;
+            //     if(cpt>max_stagnation_iterations){
+            //         stop = true;
+            //     }
+            // }                   
             nb_iterations++;
 
         }

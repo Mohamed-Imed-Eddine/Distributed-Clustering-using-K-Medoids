@@ -126,11 +126,11 @@ public class Test{
         KMedoid model = new KMedoid(k, max_iterations, stagnation_step,max_stagnation_iterations);
         model.fit(all_data); 
 
-        int[] labels = model.get_labels();
-        int a=0,b=0,c=0;
-        for(int i=0;i<labels.length;i++){
-            System.out.println((i+1)+")"+labels[i]);;
-        }
+        // int[] labels = model.get_labels();
+        // int a=0,b=0,c=0;
+        // for(int i=0;i<labels.length;i++){
+        //     System.out.println((i+1)+")"+labels[i]);;
+        // }
         System.out.println("final cost:"+String.format("%.2f",model.get_cost())+"\t number of iteration:"+model.get_nb_iterations());
         //System.out.println("a= "+a+" b= "+b+" c= "+c);
         //System.out.println("Accuracy= ");
