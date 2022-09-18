@@ -8,42 +8,121 @@ public class KMedoid {
     private Double stagnation_step;
     private Double[][] data;
     private int m;
-    //private int n;
     ArrayList<Integer> medoids;
     int[] labels;
     Double cost;
     int nb_iterations;
 
-    public KMedoid(int k,int max_iterations,Double stagnation_step,int max_stagnation_iterations){
-        //this.data = data;
+
+
+    public KMedoid(Double[][] data,int k){
+        this.data = data;
         this.k = k;
-        this.max_iterations = max_iterations;
-        this.stagnation_step = stagnation_step;  
-        this.max_stagnation_iterations = max_stagnation_iterations;  
-        //this.n = data[0].length;
-        medoids = new ArrayList<Integer>();
-        cost = 0.0;
-        nb_iterations = 0;
+        this.m = data.length;
+        this.medoids = new ArrayList<Integer>();
+        this.cost = 0.0;
+        this.labels = new int[m];
+    }
+
+
+    public void initialise_medoids(){
+        // Choisir K objets arbitrairement à partir de l'ensemble D pour former les centres initiaux.
+        int val;
+        while(this.medoids.size()<this.k){
+            val = (int) (Math.random()*m);
+            if(!this.medoids.contains(val)){
+                this.medoids.add(val);
+            }
+        }
+
+    }
+
+    public void do_iteration(){
+
+        int index_or,index_oj;
+        boolean stop = false;
+        Double new_cost = 0.0;
+        int cpt = 0;     
+        Double[] obj,medoid;
+        Double min_distance,distance;
+        int min_medoid = 0;
         
+        //Assigner chaque objet au cluster auquel il est le plus similaire se basant sur la valeur de distance entre les objets.
+        this.cost = 0.0;
+        for(int i=0;i<m;i++){
+            obj = data[i];
+            min_distance = Double.POSITIVE_INFINITY;
+            for(int j=0;j<k;j++){
+                medoid = data[this.medoids.get(j)];
+                distance = distance(obj, medoid);
+                if(distance<min_distance){
+                    min_medoid = j;
+                    min_distance = distance;
+                }
+            }
+            
+            this.cost+=min_distance;
+            this.labels[i] = min_medoid;
+        }
+        this.cost = this.cost / inter_clusters_distance(data, medoids);
+
+
+
+            
+        // Choisir aléatoirement un objet non représentatif (Or).
+        index_or = this.medoids.get(0);
+        while(this.medoids.contains(index_or)){
+            index_or = (int) (Math.random()*m);
+        }
+
+
+            
+        Double best_partial_cost;
+        ArrayList<Integer> best_partial_medoids = new ArrayList<>();
+        ArrayList<Integer> new_medoids;
+            
+        int best_oj = 0;
+        best_partial_cost = Double.POSITIVE_INFINITY;
+        // Essayer d'efectuer des echanges avec des objets representatif
+        for(int i=0;i<k;i++){
+            new_medoids = new ArrayList<>(this.medoids);
+            new_medoids.set(i, index_or);
+            new_cost = cost(data, new_medoids, this.labels);
+
+            if(new_cost<best_partial_cost){
+                //cpt = 0;
+                best_partial_cost = new_cost;
+                best_partial_medoids = new ArrayList<>(new_medoids);
+                
+            }
+
+        }
+
+        if(best_partial_cost<this.cost){
+                this.medoids = new ArrayList<>(best_partial_medoids);
+            this.cost = best_partial_cost;
+        }
+
+            
+    }
+
+    public Solution get_solution(){
+        return new Solution(this.medoids, this.labels, this.cost);
+    }
+
+    public void update_solution(ArrayList<Integer> medoids,int[] labels){
+        this.medoids = medoids;
+        this.labels = labels;
     }
 
 
 
-
     public void fit(Double[][] data){
-        this.data = data;
-        this.m = data.length;
-        labels = new int[m];
 
-        // Choisir K objets arbitrairement à partir de l'ensemble D pour former les centres initiaux.
-        int val;
-        while(medoids.size()<k){
-            val = (int) (Math.random()*m);
-            if(!medoids.contains(val)){
-                medoids.add(val);
-            }
-        }
-        //Double[] or,oj;
+        initialise_medoids();
+
+        this.labels = new int[m];
+
         int index_or,index_oj;
         
         boolean stop = false;
@@ -71,15 +150,9 @@ public class KMedoid {
                 }
                 
                 cost+=min_distance;
-                labels[i] = min_medoid;
+                this.labels[i] = min_medoid;
             }
-
-            //System.out.println("medoids"+medoids);
-            //System.out.println("cost1:"+String.format("%.2f", cost));
-            //System.out.println("cost2:"+String.format("%.2f", cost(data,medoids,labels)));
-            
-            // System.out.println(cost==cost(data,medoids,labels));
-
+            cost = cost / inter_clusters_distance(data, medoids);
 
             
             // Choisir aléatoirement un objet non représentatif (Or).
@@ -88,9 +161,6 @@ public class KMedoid {
                 index_or = (int) (Math.random()*m);
             }
 
-            //index_oj = medoids.get(labels[index_or]);
-
-            //System.out.println("or:"+index_or+" oj:"+index_oj);
             
             Double best_partial_cost;
             ArrayList<Integer> best_partial_medoids = new ArrayList<>();
@@ -102,7 +172,7 @@ public class KMedoid {
             for(int i=0;i<k;i++){
                 new_medoids = new ArrayList<>(medoids);
                 new_medoids.set(i, index_or);
-                new_cost = cost(data, new_medoids, labels);
+                new_cost = cost(data, new_medoids, this.labels);
 
                 if(new_cost<best_partial_cost){
                     //cpt = 0;
@@ -119,7 +189,6 @@ public class KMedoid {
                     stop = true;
                 }
                 
-                //System.out.println("UPDATE : cost: "+String.format("%.2f",cost)+"\tnew cost: "+String.format("%.2f",new_cost));
                 medoids = new ArrayList<>(best_partial_medoids);
                 cost = best_partial_cost;
             }
@@ -130,29 +199,7 @@ public class KMedoid {
                 }
             } 
             
-            //new_medoids.set(labels[index_or], index_or);
-            //System.out.println("new"+new_medoids);
-            //  Calculer le coût total "S" des échanges d'objets représentatifs (oj) avec (Or)
-            //new_cost = cost(data, new_medoids, labels);
-            //System.out.println("new cost"+String.format("%.2f", new_cost));
-            // if(new_cost<cost){
-            //     cpt = 0;
-            //     if((new_cost>=(cost-stagnation_step))){
-            //         stop = true;
-            //     }
-                
-            //     //System.out.println("UPDATE : cost: "+String.format("%.2f",cost)+"\tnew cost: "+String.format("%.2f",new_cost));
-            //     medoids = new ArrayList<>(new_medoids);
-            //     cost = new_cost;
-            // }
-            // else{
-            //     cpt++;
-            //     if(cpt>max_stagnation_iterations){
-            //         stop = true;
-            //     }
-            // }                   
-            nb_iterations++;
-
+            nb_iterations++;               
         }
 
 
@@ -173,6 +220,10 @@ public class KMedoid {
     }
 
     public static Double cost(Double[][] x, ArrayList<Integer> medoids,int[] labels){
+        return  intra_clusters_distante(x, medoids, labels) / inter_clusters_distance(x, medoids) ;
+    }
+
+    public static Double intra_clusters_distante(Double[][] x, ArrayList<Integer> medoids,int[] labels){
         Double val = 0.0;
         Double[] medoid,obj;
         for(int i=0;i<x.length;i++){
@@ -180,6 +231,24 @@ public class KMedoid {
             medoid = x[medoids.get(labels[i])];
             val += distance(obj, medoid);
         }
+        return val;
+    }
+
+    public static Double inter_clusters_distance(Double[][] x,ArrayList<Integer> medoids){
+        Double[] medoid1,medoid2;
+        Double val = 0.0;
+        for (int i=0;i<medoids.size();i++){
+            medoid1 = x[i];
+            //for(int j=i+1;i<medoids.size();j++){
+            int j = 1+i;
+            while(j<medoids.size()){
+                medoid2 = x[j];
+                val += distance(medoid1, medoid2);
+                //System.out.print("k ");
+                j++;
+            }
+        }
+        //System.out.println();
         return val;
     }
 
